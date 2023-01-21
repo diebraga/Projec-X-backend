@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  name          String
+  password      String
+  imgUri        String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  accountType   AccountType  @relation(fields: [accountTypeId], references: [id])
+  accountTypeId Int
+  reviews       UserReview[]
+  Job           Job[]
+}
+
+// ex: Personal, Business
+model AccountType {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String
+  User      User[]
+}
+
+model UserReview {
+  id        Int      @id @default(autoincrement())
+  // validation min: 1, max: 5
+  stars     Int
+  review    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+}
