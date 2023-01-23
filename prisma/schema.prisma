@@ -8,45 +8,179 @@ datasource db {
 }
 
 model User {
-  id            Int          @id @default(autoincrement())
-  email         String       @unique
-  name          String
-  password      String
-  imgUri        String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  accountType   AccountType  @relation(fields: [accountTypeId], references: [id])
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  name     String
+  password String
+
+  imgUri String?
+  imgId  String?
+
+  contactNumber      String?
+  validNumber        Boolean @default(false)
+  eircode            String?
+  city               String?
+  englishProficiency String?
+
+  ppsNumber     String?
+  ppsUri        String?
+  ppsUriId      String?
+  ppsValid      Boolean   @default(false)
+  ppsValidUntil DateTime?
+
+  idNumber     String?
+  idUri        String?
+  idUriId      String?
+  idValid      Boolean   @default(false)
+  idValidUntil DateTime?
+
+  geoLocation String //nao sei como isso funciona mas se fo-se possivel pegar a geolalização dele para ve a quantos km de distacia ele esta da job, estou pensando para por exemplo cidades mais grandes como dublin o cara aceitar o job sem saber onde é, é foda, ai o job é muito longe o cara n vai isso gera um desconforto para a empresa e para o app tambem
+
+  jobApplication JobApplication[]
+  job            Job[]
+
+  accountType   AccountType @relation(fields: [accountTypeId], references: [id])
   accountTypeId Int
-  reviews       UserReview[]
-  Job           Job[]
+
+  skills UserSkills[]
+
+  reviewsRecived UserReview[] @relation("reviewsRecived")
+  reviewsSent    UserReview[] @relation("reviewsSent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserSkills {
+  id Int @id @default(autoincrement())
+
+  title String
+  //criar isto em outra tabela que se no futuro quisermos mudar para o cara colocar nao somente a skill mas tambem o valor que ele quer sobrar por hora da quela skill
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ex: Personal, Business
 model AccountType {
-  id        Int      @id @default(autoincrement())
+  id    Int    @id @default(autoincrement())
+  title String
+
+  user User[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  title     String
-  User      User[]
 }
 
 model UserReview {
-  id        Int      @id @default(autoincrement())
-  // validation min: 1, max: 5
-  stars     Int
-  review    String
+  id     Int    @id @default(autoincrement())
+  stars  Int
+  review String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    Int?
+
+  User   User @relation("reviewsRecived", fields: [userId], references: [id])
+  userId Int
+
+  userSent   User @relation("reviewsSent", fields: [userSentId], references: [id])
+  userSentId Int
 }
 
 model Job {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int    @id @default(autoincrement())
   title       String
   description String
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
+
+  uniformProvided    Boolean @default(false)
+  uniformDestination String?
+
+  jobType String
+  // private / business / agency
+
+  agency Boolean @default(false)
+  //para saber se sera pago por nois direto pela empresa 
+
+  date DateTime
+  //trabalho para a data 27/01/2023
+
+  validDate DateTime
+  //trabalho para a data 26/01/2023
+
+  validTime String
+  // ate as 18:00 - opções serao a cada hora, que podemos fazer um script para verificar a cada hora no back end e finalizar as propostas
+
+  isFinished Boolean @default(true)
+  // ainda esta aceitando aplicações
+
+  contact String
+  //quem a pessoa vai procurar a chegar no local para trabalhar
+
+  geoLocation String //mesma explicação nos detalhes do user, no caso fazer a comparação entre um e outro e mostrar a distancia para o usuario q vai aplicar para o job
+
+  jobApplication JobApplication[]
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  payment JobPayment?
+
+  record JobRecord?
+  //fazer a track da jornada de trabalho do funcionario caso o trampo seja do typo Agency
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JobRecord {
+  id Int @id @default(autoincrement())
+
+  clockIn  DateTime?
+  clockOut DateTime?
+  breakIn  DateTime?
+  breakOut DateTime?
+
+  job   Job @relation(fields: [jobId], references: [id])
+  jobId Int @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JobPayment {
+  id Int @id @default(autoincrement())
+
+  total String
+  //valor total
+
+  status String
+  //tem que verificar no stripe para colocarmos aqui o status deste pagamento depois, por exemplo se foi finalizado ou devolvido
+
+  paymentId String
+  //creio que o stripe devolva um id do pagamento
+
+  job   Job @relation(fields: [jobId], references: [id])
+  jobId Int @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JobApplication {
+  id Int @id @default(autoincrement())
+
+  accept Boolean
+  //checar para saber se o job foi aceito ou nao
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  job   Job? @relation(fields: [jobId], references: [id])
+  jobId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
